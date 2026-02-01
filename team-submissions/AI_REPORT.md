@@ -11,17 +11,17 @@ Our team employed a multi-agent AI strategy to maximize productivity while maint
 
 **Primary Development Environment:**
 * **VS Code + GitHub Copilot (Claude Sonnet 4.5):** Main coding agent for all quantum circuit design, CUDA-Q implementation, and GPU kernel development. Used for real-time code generation, refactoring, and debugging.
-* **Cursor (GPT-4):** Secondary agent for complex algorithmic design, particularly for the DCQO λ schedule implementation and nested commutator expansions.
+* **Gemini 3.5 Pro:** Secondary agent for complex algorithmic design, particularly for the DCQO λ schedule implementation and nested commutator expansions.
 
 **Specialized Tasks:**
-* **ChatGPT-4:** Literature review, paper summarization, and theoretical validation. We fed it arXiv papers to extract key equations and implementation details for DCQO.
+* **Perplexity:** Literature review, paper summarization, and theoretical validation. We had it search for arXiv papers to extract key equations and implementation details for DCQO and known solutions to the LABS problem.
 * **Claude (Anthropic):** Documentation generation, PRD refinement, and technical writing for the presentation deck.
 
 **Task Distribution:**
-* **Benjamin (Architect):** Directed Copilot for quantum algorithm design, managed the impulse-to-adiabatic transition logic
+* **Benjamin (Team Lead):** Directed Copilot for quantum algorithm design, managed the impulse-to-adiabatic transition logic
 * **Trent (GPU PIC):** Used Copilot for CUDA kernel optimization, CuPy implementations, and GPU memory management
 * **Martin & Sanjeev (QA):** Wrote pytest test suites with Copilot assistance, used AI to generate edge cases for energy function validation
-* **Joseph (Marketing):** Used Claude for presentation content, narrative structuring, and visualization recommendations
+* **Joseph (Marketing):** Used Claude for website content, narrative structuring, and visualization recommendations
 
 ### Team Time Distribution
 
@@ -30,20 +30,11 @@ Our team employed a multi-agent AI strategy to maximize productivity while maint
 The chart above shows how each team member allocated their time during the 24-hour hackathon. Key observations:
 - **Martin (18h):** Led quantum algorithm design (8h), implementing the core DCQO framework with impulse-to-adiabatic transition and nested commutator expansions
 - **Trent (18h):** Dominated by GPU kernel development (9h) for CUDA-Q circuit simulation and CuPy-based MTS acceleration, with quantum support (2h)
-- **Benjamin (17h):** Quantum algorithm design (3h), team coordination (3h), code review/debugging (3h), and AI prompt engineering (2h)
+- **Benjamin (17h):** Quantum algorithm optimization (3h), CUDA Kernel Optimization (3h), code review/debugging (3h), and AI prompt engineering (2h)
 - **Sanjeev (16h):** Primary focus on unit testing & validation (8h) with property-based tests, symmetry checks, and extensive code review (3h)
 - **Joseph (13h):** Documentation & reports (8h), including this AI report, presentation slides, and PRD refinement
 
 Total team effort: **~82 person-hours** over 24 hours with intensive parallel work across all team members.
-
-**Integration Strategy:**
-We maintained a shared `docs/context.md` file that all team members referenced when prompting AI agents. This file contained:
-- Core DCQO equations and parameter definitions
-- LABS energy function specifications
-- GPU hardware constraints (L4 vs A100 memory limits)
-- Known good test cases (N=3 through N=10 with verified energies)
-
----
 
 ## 2. Verification Strategy
 
@@ -92,71 +83,12 @@ def test_energy_bounds(N):
 ```
 This property test caught when Copilot hallucinated a CUDA kernel that occasionally returned negative energies due to integer overflow in the autocorrelation sum.
 
-**Unit Test 4: GPU-CPU Consistency**
-```python
-def test_gpu_cpu_parity():
-    """GPU and CPU implementations must produce identical results"""
-    for N in range(5, 40, 5):
-        S = random_sequence(N)
-        E_cpu = energy_labs_cpu(S)
-        E_gpu = energy_labs_gpu_cupy(S)
-        assert np.allclose(E_cpu, E_gpu, atol=1e-6), \
-            f"GPU/CPU mismatch at N={N}: CPU={E_cpu}, GPU={E_gpu}"
-```
-
-**Unit Test 5: Quantum Circuit Depth Constraint**
-```python
-def test_dcqo_circuit_depth_limit():
-    """DCQO circuits must fit within hardware gate limits"""
-    for N in [10, 15, 20]:
-        circuit = build_dcqo_circuit(N, p_layers=3)
-        depth = circuit.depth()
-        max_depth = 1000  # A100 coherence limit
-        assert depth < max_depth, \
-            f"Circuit depth {depth} exceeds limit {max_depth} for N={N}"
-```
-
 > **📁 See Also:** [`labs_gpu/tests.py`](../labs_gpu/tests.py) — test suite with 27 comprehensive tests covering helper functions, all quantum kernel variants, data export, and CUDA integration.
-
-**Unit Test 6: Adiabatic Schedule Bounds** *(from tests.py)*
-```python
-def test_compute_adiabatic_schedule_bounds(self):
-    """Verify all lambda values are in [0, 1]."""
-    lambdas = one_shot.compute_adiabatic_schedule(50)
-    for l in lambdas:
-        self.assertGreaterEqual(l, 0.0)
-        self.assertLessEqual(l, 1.0)
-```
-
-**Unit Test 7: Quantum Kernel Output Validation** *(from tests.py)*
-```python
-def test_output_contains_valid_spins(self):
-    """Verify output binary contains only ±1 spin values."""
-    output = os.path.join(self.test_dir, "spins.bin")
-    one_shot.run_simulation(n=4, shots=100, pop_size=8, output_file=output,
-                            variant='jenga', steps=1)
-    data = np.fromfile(output, dtype=np.int8).reshape(8, 512)
-    valid_spins = data[:, :4]
-    self.assertTrue(np.all(np.isin(valid_spins, [-1, 1])),
-                    "All spin values should be ±1")
-```
-
-**Unit Test 8: Interaction Topology Uniqueness** *(from tests.py)*
-```python
-def test_get_interactions_uniqueness(self):
-    """Verify all generated pairs/quads are unique."""
-    g2, g4, _, _ = one_shot.get_interactions(8)
-    g2_sets = [frozenset(p) for p in g2]
-    g4_sets = [frozenset(q) for q in g4]
-    self.assertEqual(len(g2_sets), len(set(g2_sets)), "G2 should be unique")
-    self.assertEqual(len(g4_sets), len(set(g4_sets)), "G4 should be unique")
-```
 
 
 ### AI Code Review Protocol
 1. **No AI code merged without passing all unit tests**
 2. **Manual review required for any CUDA kernel (Trent PIC approval)**
-3. **QA team runs full test suite on L4 GPU before A100 deployment**
 
 ---
 
@@ -164,18 +96,18 @@ def test_get_interactions_uniqueness(self):
 
 ### Win: AI Saved Us 6+ Hours on GPU Memory Optimization
 
-**Context:** We were trying to fit the MTS neighbor evaluation batch (1000 sequences) into L4 GPU shared memory (8 GB) but kept getting OOM errors.
+**Context:** We were trying to fit the MTS neighbor evaluation batch (1000 sequences) into A100 GPU shared memory but kept getting OOM errors.
 
 **What Happened:** After 45 minutes of manual debugging, Benjamin prompted Copilot with:
 ```
-"Our CUDA kernel for batched LABS energy evaluation is OOM on L4. 
-Current approach: storing full N×N tableC matrix per sequence. 
-GPU: L4 8GB, batch_size=1000, N=30. Suggest memory-efficient data structure."
+"Our CUDA kernel for batched LABS energy evaluation is OOM on A100. 
+Current approach: full N×N tableC matrix per sequence. 
+GPU: A100 80GB, batch_size=1000, N=60. Suggest memory-efficient data structure."
 ```
 
-**AI Response:** Copilot suggested using bit-packed storage (8 sequences per byte) for the binary tableC matrix and computing vectorC on-the-fly instead of storing it. Generated a complete CUDA kernel with `__shared__` memory optimization.
+**AI Response:** Copilot suggested using bit-packed storage (8 sequences per byte) for the binary tableC matrix and computing vectorC on-the-fly instead of storing it. Generated a complete CUDA kernel with `__shared__` memory optimization. Also recommended a paper from JPMorgan Research solving the exact problem we were struggling with. 
 
-**Result:** Memory usage dropped from 12 GB to 4.2 GB. Kernel ran successfully on L4. This matched the exact technique from the Zhang et al. (2025) MTS paper, which we hadn't fully absorbed yet. **Time saved: ~6 hours of manual memory profiling and optimization.**
+**Result:** Memory usage dropped from 120 GB to 42 GB. Kernel ran successfully on A100. This matched the exact technique from the Zhang et al. (2025) MTS paper, which we hadn't fully absorbed yet. **Time saved: ~6 hours of manual memory profiling and optimization.**
 
 ---
 
@@ -242,7 +174,7 @@ def batch_energy_cupy(sequences_batch):
 - Expected E=1.0, got E=3.0
 
 **The Fix:**
-Martin manually implemented proper vectorized autocorrelation:
+Trent manually implemented proper vectorized autocorrelation:
 ```python
 def batch_energy_cupy_fixed(sequences_batch):
     # Proper vectorized aperiodic autocorrelation
@@ -254,7 +186,7 @@ def batch_energy_cupy_fixed(sequences_batch):
     return energies
 ```
 
-**Lesson:** AI doesn't understand domain-specific definitions. "Autocorrelation" means different things in signal processing vs. LABS optimization. Always validate against known solutions.
+**Lesson:** AI doesn't always understand domain-specific definitions. "Autocorrelation" means different things in signal processing vs. LABS optimization. Always validate against known solutions.
 
 ---
 
@@ -297,7 +229,7 @@ Include: timing benchmarks and memory usage assertions
 ```markdown
 # Team Skills & AI Usage Guidelines
 
-## Quantum Computing (Benjamin)
+## Quantum Optimization (Benjamin)
 - DCQO, QAOA, VQE algorithms
 - Familiar with: nested commutators, adiabatic gauge potential
 - Notation: We use λ for schedule (not s(t)), Δ for gap
@@ -325,7 +257,7 @@ Include: timing benchmarks and memory usage assertions
 Our AI-assisted workflow achieved:
 - **~30 hours saved** across the team through code generation and optimization
 - **Zero critical bugs** reached production GPU runs (all caught by unit tests)
-- **85% first-pass accuracy** on complex DCQO implementations after context file adoption
+- **first-pass accuracy** on complex DCQO implementations after context file adoption
 
 **Key Insight:** AI agents are powerful code generators but terrible at domain-specific physics. The winning strategy is: detailed context files + aggressive unit testing + human physics validation.
 
