@@ -1937,13 +1937,17 @@
 
         /* Team Section */
         .team-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
             gap: 20px;
             margin-top: 25px;
+            justify-content: center;
         }
 
         .team-card {
+            width: calc(33.333% - 14px);
+            max-width: 320px;
+            min-width: 250px;
             background: var(--bg-card);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
@@ -1951,6 +1955,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            text-align: center;
         }
 
         .team-card::before {
@@ -1995,6 +2000,7 @@
         .team-handles {
             display: flex;
             gap: 15px;
+            justify-content: center;
         }
 
         .team-handle {
