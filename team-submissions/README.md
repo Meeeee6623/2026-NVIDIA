@@ -1,6 +1,42 @@
-# LABS GPU: Quantum-Accelerated Low Autocorrelation Binary Sequence Optimization
+# Ryzz Gate: Quantum-Accelerated Low Autocorrelation Binary Sequence Optimization
 
-This directory contains our hybrid quantum-classical solution for the **Low Autocorrelation Binary Sequence (LABS)** problem, accelerated using CUDA-Q and CUDA.
+**Team Planck Scale** — Martin, Trent, Sanjeev, Benjamin, Joseph *(presented via huzz.vc)*
+
+---
+
+## 🎯 The Problem: Why This Matters
+
+**Ryzz Gate** is our attempt to accelerate solving the **Low Autocorrelation Binary Sequence (LABS)** problem—an optimization task that seeks sequences with *minimal autocorrelation*, motivated by practical radar waveform considerations.
+
+Brute force search scales exponentially (~2ⁿ), quickly becoming intractable. Our project explores whether a *quantum-inspired / quantum-enhanced* approach can improve the effective scaling relative to strong classical baselines, while still producing high-quality candidate sequences.
+
+**Goal**: Find a binary sequence `s = [s₁, s₂, ..., sₙ]` where `sᵢ ∈ {-1, +1}` that **minimizes**:
+
+```
+E(s) = Σ (Cₖ)²  where  Cₖ = Σ sᵢ · sᵢ₊ₖ
+```
+
+---
+
+## 🏗️ What We Built
+
+### Phase 1 — Algorithmic Approach (Quantum-Enhanced Framing)
+
+We model the LABS objective and explore a **CDQO / annealing-inspired** approach with an "impulse-regime" intuition, explicitly reasoning about the interplay between **Counter-Diabatic (CD)** and **Adiabatic (AD)** components.
+
+We introduce a tunable **λ(t)** schedule designed to enter a CD-dominant regime early, then transition to a slower, AD-dominant finish.
+
+### Phase 2 — Engineering for Throughput (Classical + GPU Acceleration)
+
+We optimized the implementation to make large experiment sweeps feasible:
+- Aggressive compilation choices
+- Custom CUDA-Q kernels
+- Deliberate thread allocation
+- Profiling-driven tuning (Nsight-style workflow) until performance gains saturated
+
+### Extending Beyond 1 Qubit : 1 Bit
+
+To push past qubit-count limits, we also explored **Pauli Coefficient Encoding (PCE)**: instead of representing each bit directly, we encode information through the sign structure of selected Pauli-string observables (sampling from {X,Y,Z} to reduce redundancy), aiming for a higher effective bits-per-qubit ratio.
 
 ---
 
@@ -21,240 +57,115 @@ team-submissions/
 
 ---
 
-## 🧠 The Problem: LABS
-
-The goal is to find a binary sequence `s = [s₁, s₂, ..., sₙ]` where `sᵢ ∈ {-1, +1}` that **minimizes** the energy function:
-
-```
-E(s) = Σ (Cₖ)²  where  Cₖ = Σ sᵢ · sᵢ₊ₖ
-```
-
-This is an NP-hard combinatorial optimization problem with applications in signal processing, radar systems, and communications.
-
----
-
-## 🚀 Our Approach: Quantum → Bin → GPU
+## 🚀 Pipeline: Quantum → Bin → GPU
 
 Our solution uses a **two-stage hybrid pipeline**:
 
 ### Stage 1: Quantum Sampling ([`one_shot.py`](labs_gpu/one_shot.py))
 
-We use **CUDA-Q** to sample high-quality candidate sequences from quantum circuits. The quantum circuits implement **Counter-Diabatic (CD)** and **Adiabatic (AD)** schedules to guide the system toward low-energy states.
+We use **CUDA-Q** to sample high-quality candidate sequences from quantum circuits implementing CD and AD schedules.
 
 ### Stage 2: Classical Refinement ([`one_shot.cu`](labs_gpu/one_shot.cu))
 
-The quantum samples are exported to a **binary file (`.bin`)** which is then loaded by a GPU-accelerated **Tabu Search** algorithm. The GPU solver uses massive parallelism to refine the quantum-generated candidates into optimal solutions.
+Quantum samples are exported to a **binary file (`.bin`)** which is loaded by a GPU-accelerated **Tabu Search** algorithm for refinement.
 
 ---
 
 ## 🔬 Quantum Approaches in `one_shot.py`
 
-The quantum code implements **5 different kernel variants**, each with unique trade-offs:
+### Kernel Variants
 
-### 1. `kernel_default`
-- **Description**: Baseline implementation with full 2-body and 4-body ZZ interaction terms.
-- **Use Case**: Reference implementation for correctness validation.
+| Variant | Description |
+|---------|-------------|
+| `kernel_default` | Baseline with full 2-body and 4-body ZZ interactions |
+| `kernel_jenga` | Optimized default with cleaner gate stacking |
+| `kernel_dna` | Hybrid kernel **interleaving** CD and AD steps via toggle arrays |
+| `kernel_beyblade` | AD steps come **before** CD steps (alternating pattern) |
+| `kernel_tensor_heavy` | Designed for tensor network simulation (`tensornet` target) |
 
-### 2. `kernel_jenga`
-- **Description**: Optimized version of default with identical physics but cleaner code structure.
-- **Named for**: The careful "stacking" of gate operations like Jenga blocks.
+### Lambda Schedules λ(t)
 
-### 3. `kernel_dna`
-- **Description**: Hybrid kernel that **interleaves** Counter-Diabatic (CD) and Adiabatic (AD) steps.
-- **Key Feature**: Uses boolean toggle arrays (`CD[]`, `AD[]`) to dynamically switch between evolution modes.
-- **Physics**: Combines the precision of CD driving with the robustness of AD evolution.
-
-### 4. `kernel_beyblade`
-- **Description**: Similar to DNA but with a different interleaving pattern - AD steps come **before** CD steps within each iteration.
-- **Named for**: The "spinning" alternation between evolution types.
-
-### 5. `kernel_tensor_heavy`
-- **Description**: Designed for **tensor network simulation** (`cudaq.set_target("tensornet")`).
-- **Use Case**: Scales to larger N by exploiting tensor contraction instead of state vector simulation.
-- **Trade-off**: Requires more GPU memory but can handle deeper circuits.
-
-### Lambda Scheduling Methods
-
-The adiabatic schedule `λ(t)` controls how the Hamiltonian evolves from the mixer to the problem Hamiltonian:
-
-| Method | Formula | Characteristic |
-|--------|---------|----------------|
-| `linear` | `λ = t/T` | Constant rate |
-| `sqrt` | `λ = √(t/T)` | Fast start, slow finish |
-| `cuberoot` | `λ = ∛(t/T)` | Even faster start |
-| `trig` | `λ = sin²(πt/2T)` | Smooth S-curve |
+| Method | Formula | Regime |
+|--------|---------|--------|
+| `linear` | λ = t/T | Constant rate |
+| `sqrt` | λ = √(t/T) | CD-dominant early, AD-dominant late |
+| `cuberoot` | λ = ∛(t/T) | Even stronger early push |
+| `trig` | λ = sin²(πt/2T) | Smooth S-curve transition |
 
 ---
 
 ## 📄 Why Binary Files (`.bin`)?
 
-The quantum sampler exports candidates to a binary file for several key reasons:
-
-1. **Memory Efficiency**: Binary format stores sequences as `int8` (-1/+1 values), using only 1 byte per spin instead of 8 bytes for floats.
-
-2. **GPU-Optimized Layout**: The data is pre-formatted with:
-   - **Fixed row stride** of `MAX_N = 512` for coalesced memory access
-   - **Consistent population size** for predictable kernel launches
-
-3. **Decoupled Pipeline**: Allows the quantum and classical stages to run independently:
-   - Run quantum sampling once, refine many times
-   - Experiment with different classical solvers on the same quantum data
-
-4. **Warm Start Injection**: The classical solver can **partially load** quantum candidates and fill remaining slots with random sequences. This is the `load_warm_start_partial()` function in the CUDA code.
+1. **Memory Efficiency**: `int8` storage (1 byte/spin vs 8 bytes/float)
+2. **GPU-Optimized Layout**: Fixed stride `MAX_N = 512` for coalesced access
+3. **Decoupled Pipeline**: Run quantum once, refine many times
+4. **Warm Start Injection**: Partial loading with `load_warm_start_partial()`
 
 ---
 
 ## ⚡ GPU Optimizations in `one_shot.cu`
 
-The CUDA code is heavily optimized for A100/A6000 GPUs:
-
-### Shared Memory Architecture
-
-```cpp
-__shared__ int8_t s_seq[MAX_N];      // Current sequence
-__shared__ int8_t s_best_seq[MAX_N]; // Best found
-__shared__ int s_corr[MAX_N];        // Autocorrelations
-__shared__ int s_tabu[MAX_N];        // Tabu tenure array
-```
-
-**Why?** Shared memory is ~100x faster than global memory. The entire sequence and its autocorrelations fit in shared memory, enabling in-place modification without global memory round-trips.
-
-### Incremental Energy Updates
-
-Instead of recomputing `E(s)` from scratch after each flip:
-
-```cpp
-for (int k = 1; k < N; k++) {
-    int nb = 0;
-    if (i + k < N) nb += s_seq[i + k];
-    if (i - k >= 0) nb += s_seq[i - k];
-    int dCk = -2 * s_p * nb;
-    dE += (long long)dCk * (2 * s_corr[k] + dCk);
-}
-```
-
-This computes the **delta energy** for flipping position `i` using only O(N) operations instead of O(N²).
-
-### Warp-Level Reduction
-
-```cpp
-__device__ __forceinline__ void warpReduceMin(long long &val, int &idx) {
-    for (int offset = 16; offset > 0; offset /= 2) {
-        long long o_val = __shfl_down_sync(0xFFFFFFFF, val, offset);
-        int o_idx = __shfl_down_sync(0xFFFFFFFF, idx, offset);
-        if (o_val < val) { val = o_val; idx = o_idx; }
-    }
-}
-```
-
-Uses **warp shuffle intrinsics** to find the best flip position across all threads without expensive atomic operations.
-
-### Memetic Algorithm with Elitism
-
-Every `MEMETIC_FREQ` iterations:
-1. Sort population by energy
-2. Keep top `ELITE_COUNT` sequences
-3. Generate new candidates via crossover + mutation
-4. Inject diversity while preserving best solutions
+| Optimization | Impact |
+|--------------|--------|
+| **Shared Memory** | Entire sequence + autocorrelations in fast local memory |
+| **Incremental ΔE** | O(N) per flip instead of O(N²) recomputation |
+| **Warp Shuffles** | `__shfl_down_sync` for lock-free reduction |
+| **Memetic Elitism** | Top 128 sequences preserved across generations |
 
 ---
 
-## 📓 VQE + PCE Approach ([`PCE encoding.ipynb`](PCE%20encoding.ipynb))
+## 📓 PCE/VQE Approach ([`PCE encoding.ipynb`](PCE%20encoding.ipynb))
 
-This notebook explores an **alternative quantum approach** using:
+Alternative approach using **Pauli Coefficient Encoding**:
 
-### Parameterized CE (PCE) Encoding
-
-Instead of directly encoding the LABS problem, we use a **variational quantum circuit** with trainable parameters:
-
-```python
-for i in range(n):
-    ry(params[i], qubits[i])        # Single-qubit rotations
-    rz(params[i+n], qubits[i])
-cx(qubits[i], qubits[i+1])          # Entangling layer
-rz(params[...], qubits[i+1])        # Parameterized ZZ interaction
-```
-
-### Gradient Descent Optimization
-
-The loss function uses a **tanh relaxation** to convert continuous expectation values to approximate binary values:
-
-```python
-x_tilde = [np.tanh(alpha * exp) for exp in expectation_values]
-```
-
-This makes the energy landscape differentiable for gradient-based optimization.
-
-### Trade-offs
-
-| Aspect | PCE/VQE | Counter-Diabatic |
-|--------|---------|------------------|
-| Flexibility | High (many parameters) | Fixed schedule |
-| Training | Requires many iterations | Single shot |
-| Noise Resilience | Better (shallow circuits) | Worse (deep circuits) |
-| Implementation | More complex | Simpler |
+- **Parameterized circuit** with trainable RY/RZ rotations + entangling layers
+- **Tanh relaxation**: `x̃ = tanh(α · ⟨P⟩)` for differentiable optimization
+- **Trade-off**: More flexible but requires iterative training vs. single-shot CD/AD
 
 ---
 
 ## 🏃 How to Run
 
-### 1. Quantum Sampling (Generate Warm Start)
-
 ```bash
+# 1. Quantum Sampling
 cd labs_gpu
 python one_shot.py --n 64 --shots 10000 --variant dna --lambda_method trig --output warm_start.bin
-```
 
-**Arguments:**
-- `--n`: Sequence length
-- `--shots`: Number of quantum samples
-- `--variant`: Kernel choice (`jenga`, `dna`, `beyblade`, `tensor_heavy`)
-- `--lambda_method`: Adiabatic schedule (`linear`, `sqrt`, `cuberoot`, `trig`)
-- `--output`: Binary output file
-
-### 2. CUDA Compilation
-
-```bash
+# 2. Compile CUDA
 nvcc -O3 -arch=sm_80 one_shot.cu -o labs_solver -lcurand
-```
 
-### 3. GPU Optimization
-
-```bash
+# 3. GPU Optimization
 ./labs_solver 64 8192 1000000 warm_start.bin
 ```
 
-**Arguments:**
-1. `N`: Sequence length
-2. `POP_SIZE`: Population size
-3. `MAX_ITERS`: Maximum iterations
-4. `WARM_START_FILE`: (Optional) Binary file from quantum sampling
-
 ---
 
-## 🧪 Testing
+## 📊 Evaluation & Outcomes
 
-Run the comprehensive test suite:
+We compare three approaches:
+1. **Brute force** scaling (exponential baseline)
+2. **Strong classical heuristics** (MTS-style scaling)
+3. **Our quantum-enhanced variants** (CD/AD + PCE)
 
-```bash
-cd labs_gpu
-python tests.py
-```
+Metrics tracked: runtime, solution quality (energy), and throughput. Some regimes are bottlenecked by practical size limits (e.g., timeouts at larger N), which we report transparently.
 
-See [`TESTS.md`](labs_gpu/TESTS.md) for detailed test documentation.
-
----
-
-## 📊 Key Results
-
+**Key Results:**
 - **Throughput**: >100M moves/second on A100 GPU
 - **Scalability**: Tested up to N=512 with shared memory
 - **Quantum Advantage**: Warm-started populations converge faster than random initialization
 
 ---
 
+## 🤖 Responsible AI Note
+
+We used AI tools primarily to accelerate documentation onboarding and conceptual lookup (e.g., CUDA-Q idioms), while keeping the *core implementation and correctness checks* human-verified. Where AI-produced edits or derivations failed validation, we reverted to verified formulations.
+
+See [`AI_REPORT.md`](AI_REPORT.md) for detailed documentation.
+
+---
+
 ## 📚 Further Reading
 
-- **PRD.md**: Full product requirements and architecture decisions
-- **AI_REPORT.md**: Documentation of AI-assisted development
-- **TESTS.md**: Test coverage and verification methodology
+- **[PRD.md](PRD.md)** — Full product requirements and architecture decisions
+- **[AI_REPORT.md](AI_REPORT.md)** — Documentation of AI-assisted development
+- **[TESTS.md](labs_gpu/TESTS.md)** — Test coverage and verification methodology
