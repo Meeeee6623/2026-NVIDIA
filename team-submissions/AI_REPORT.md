@@ -116,6 +116,43 @@ def test_dcqo_circuit_depth_limit():
             f"Circuit depth {depth} exceeds limit {max_depth} for N={N}"
 ```
 
+> **📁 See Also:** [`labs_gpu/tests.py`](../labs_gpu/tests.py) — test suite with 27 comprehensive tests covering helper functions, all quantum kernel variants, data export, and CUDA integration.
+
+**Unit Test 6: Adiabatic Schedule Bounds** *(from tests.py)*
+```python
+def test_compute_adiabatic_schedule_bounds(self):
+    """Verify all lambda values are in [0, 1]."""
+    lambdas = one_shot.compute_adiabatic_schedule(50)
+    for l in lambdas:
+        self.assertGreaterEqual(l, 0.0)
+        self.assertLessEqual(l, 1.0)
+```
+
+**Unit Test 7: Quantum Kernel Output Validation** *(from tests.py)*
+```python
+def test_output_contains_valid_spins(self):
+    """Verify output binary contains only ±1 spin values."""
+    output = os.path.join(self.test_dir, "spins.bin")
+    one_shot.run_simulation(n=4, shots=100, pop_size=8, output_file=output,
+                            variant='jenga', steps=1)
+    data = np.fromfile(output, dtype=np.int8).reshape(8, 512)
+    valid_spins = data[:, :4]
+    self.assertTrue(np.all(np.isin(valid_spins, [-1, 1])),
+                    "All spin values should be ±1")
+```
+
+**Unit Test 8: Interaction Topology Uniqueness** *(from tests.py)*
+```python
+def test_get_interactions_uniqueness(self):
+    """Verify all generated pairs/quads are unique."""
+    g2, g4, _, _ = one_shot.get_interactions(8)
+    g2_sets = [frozenset(p) for p in g2]
+    g4_sets = [frozenset(q) for q in g4]
+    self.assertEqual(len(g2_sets), len(set(g2_sets)), "G2 should be unique")
+    self.assertEqual(len(g4_sets), len(set(g4_sets)), "G4 should be unique")
+```
+
+
 ### AI Code Review Protocol
 1. **No AI code merged without passing all unit tests**
 2. **Manual review required for any CUDA kernel (Trent PIC approval)**
