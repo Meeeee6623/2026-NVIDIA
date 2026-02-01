@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RyzzGate | Quantum LABS Optimization</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -107,17 +109,21 @@
         }
 
         .page-container {
-            max-width: 1000px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 30px 20px;
+            padding: 20px 15px;
             position: relative;
             z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 20px;
         }
 
         /* Header */
         .header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
             position: relative;
         }
 
@@ -207,32 +213,32 @@
 
         /* Section Headers */
         .section {
-            margin-bottom: 60px;
+            margin-bottom: 40px;
         }
 
         .section-header {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 18px;
         }
 
         .section-icon {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, rgba(0, 245, 212, 0.2) 0%, rgba(114, 9, 183, 0.2) 100%);
             border: 1px solid var(--accent-quantum);
-            border-radius: 12px;
-            font-size: 1.5em;
+            border-radius: 10px;
+            font-size: 1.2em;
         }
 
         .icon-text {
             font-family: 'Space Mono', monospace;
             font-weight: 700;
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: var(--accent-quantum);
         }
 
@@ -241,7 +247,7 @@
         }
 
         .section-title {
-            font-size: 1.5em;
+            font-size: 1.3em;
             font-weight: 700;
             color: white;
             text-transform: uppercase;
@@ -249,16 +255,51 @@
         }
 
         .section-subtitle {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: var(--text-secondary);
             font-weight: 500;
-            margin-top: 3px;
+            margin-top: 2px;
+        }
+
+        /* Race Selector */
+        .race-selector {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .race-selector-btn {
+            padding: 8px 16px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .race-selector-btn:hover {
+            background: rgba(0, 245, 212, 0.1);
+            border-color: var(--accent-quantum);
+            color: white;
+        }
+
+        .race-selector-btn.active {
+            background: linear-gradient(135deg, rgba(0, 245, 212, 0.2) 0%, rgba(114, 9, 183, 0.2) 100%);
+            border-color: var(--accent-quantum);
+            color: var(--accent-quantum);
+            box-shadow: 0 0 15px rgba(0, 245, 212, 0.3);
         }
 
         .section-divider {
             height: 2px;
             background: linear-gradient(90deg, var(--accent-quantum) 0%, var(--accent-hybrid) 50%, transparent 100%);
-            margin: 60px 0;
+            margin: 30px 0;
             border-radius: 1px;
         }
 
@@ -296,22 +337,209 @@
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* Race Layout with Energy Map */
-        .race-container {
+        /* Dual Panel Layout */
+        .dual-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 400px;
             gap: 25px;
             margin-bottom: 30px;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1000px) {
+            .dual-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .race-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: stretch;
+            height: 100%;
+        }
+
+        @media (max-width: 1000px) {
             .race-container {
                 grid-template-columns: 1fr;
+                height: auto;
+            }
+            .race-3d-panel {
+                min-height: 350px;
             }
         }
 
         .race-main {
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .race-main .rankings-wrapper {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        /* Race 3D Visualization */
+        .race-3d-panel {
+            background: var(--bg-card);
+            border: 2px solid rgba(0, 245, 212, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 10px 40px rgba(0, 245, 212, 0.15), 0 0 60px rgba(0, 245, 212, 0.05) inset;
+            animation: glow3d 3s ease-in-out infinite alternate;
+        }
+
+        .race-3d-container {
+            flex: 1;
+            min-height: 0;
+        }
+
+        @keyframes glow3d {
+            0% {
+                box-shadow: 0 10px 40px rgba(0, 245, 212, 0.15), 0 0 60px rgba(0, 245, 212, 0.05) inset;
+            }
+            100% {
+                box-shadow: 0 15px 60px rgba(0, 245, 212, 0.25), 0 0 80px rgba(0, 245, 212, 0.1) inset;
+            }
+        }
+
+        .race-3d-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .race-3d-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-quantum), var(--accent-hybrid));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75em;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+        }
+
+        .race-3d-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: var(--accent-quantum);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
+        }
+
+        .race-3d-container {
+            flex: 1;
+            min-height: 380px;
+            background: linear-gradient(135deg, rgba(5, 5, 10, 0.95) 0%, rgba(15, 15, 25, 0.95) 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .race-3d-labels {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .race-3d-label-title {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+
+        .race-3d-label-y {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65em;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        .race-3d-label-x {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65em;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .race-3d-label-bits {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65em;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .race-3d-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .race-3d-canvas:active {
+            cursor: grabbing;
+        }
+
+        .race-3d-legend {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .race-3d-legend-gradient {
+            width: 80px;
+            height: 8px;
+            background: linear-gradient(90deg, #00f5d4, #f72585);
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
         }
 
         /* Leader Energy Map */
@@ -437,10 +665,16 @@
         /* Rankings Container - Table Style */
         .rankings-wrapper {
             background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            border: 2px solid rgba(0, 245, 212, 0.4);
+            border-radius: 16px;
             padding: 0;
             overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 245, 212, 0.15), 0 0 60px rgba(0, 245, 212, 0.05) inset;
+            animation: glow3d 3s ease-in-out infinite alternate;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
         }
 
         .rankings-table {
@@ -461,6 +695,7 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
+            flex-shrink: 0;
         }
 
         .rankings-table-header span:last-child {
@@ -469,7 +704,9 @@
 
         .rankings-body {
             position: relative;
-            min-height: 440px;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
         }
 
         /* Rank Items - Table Row Style */
@@ -880,7 +1117,302 @@
             transform: rotate(90deg);
         }
 
-        /* Energy Panel */
+        /* Energy Explorer - Full Width Layout */
+        .energy-explorer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .explorer-top {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 15px;
+            min-height: 280px;
+        }
+
+        @media (max-width: 900px) {
+            .explorer-top {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Energy Hero Display */
+        .energy-hero {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 245, 212, 0.3);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .energy-hero-display {
+            margin-bottom: 15px;
+        }
+
+        .energy-hero-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .energy-hero-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 3.5em;
+            font-weight: 700;
+            color: var(--accent-quantum);
+            text-shadow: 0 0 40px rgba(0, 245, 212, 0.6), 0 0 80px rgba(0, 245, 212, 0.3);
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .energy-hero-target {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .energy-hero-formula {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .formula-main {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: white;
+        }
+
+        .formula-sub {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+        }
+
+        .known-optima-inline {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 3D Landscape Main */
+        .landscape-3d-main {
+            min-height: 280px;
+        }
+
+        .landscape-3d-main .landscape-container {
+            height: 100%;
+            min-height: 280px;
+        }
+
+        /* Sequence Editor Row */
+        .explorer-sequence {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sequence-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .n-control-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .n-control-inline .n-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--accent-quantum);
+        }
+
+        .n-control-inline .n-input {
+            width: 60px;
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 245, 212, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1em;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .n-control-inline .n-slider {
+            width: 200px;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .n-control-inline .n-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-quantum);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 245, 212, 0.5);
+        }
+
+        .sequence-editor {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sequence-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .sequence-display {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        /* Explorer Bottom Row */
+        .explorer-bottom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 900px) {
+            .explorer-bottom {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .shift-window-panel, .sidelobe-panel {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .panel-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75em;
+            font-weight: 700;
+            color: var(--accent-quantum);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .shift-k-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            color: white;
+        }
+
+        .shift-slider-inline {
+            width: 100px;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .shift-slider-inline::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-quantum);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 245, 212, 0.5);
+        }
+
+        .shift-visualization {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .shift-window-panel {
+            overflow: hidden;
+        }
+
+        .shift-result {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-ck, .result-ck-squared {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9em;
+            font-weight: 700;
+        }
+
+        .result-ck {
+            color: var(--text-secondary);
+        }
+
+        .result-ck-squared {
+            color: var(--accent-quantum);
+            text-shadow: 0 0 8px rgba(0, 245, 212, 0.3);
+        }
+
+        .sidelobe-panel .sidelobe-chart {
+            margin-top: 0;
+            min-height: 100px;
+        }
+
+        /* Energy Panel - Keep for compatibility */
         .energy-panel {
             background: var(--bg-card);
             border-radius: 16px;
@@ -1007,22 +1539,22 @@
         .shift-rows {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
             overflow-x: auto;
-            padding-bottom: 10px;
+            padding-bottom: 5px;
         }
 
         .shift-row {
             display: flex;
             align-items: center;
-            gap: 15px;
-            min-width: max-content;
+            gap: 8px;
+            min-width: 0;
         }
 
         .shift-label {
-            width: 100px;
+            width: 70px;
             font-family: 'Space Mono', monospace;
-            font-size: 0.75em;
+            font-size: 0.65em;
             font-weight: 600;
             color: var(--text-secondary);
             text-align: right;
@@ -1031,21 +1563,24 @@
 
         .shift-bits {
             display: flex;
-            gap: 4px;
+            gap: 2px;
             transition: transform 0.3s ease;
+            flex-wrap: nowrap;
         }
 
         .shift-bit {
-            width: 36px;
-            height: 42px;
+            width: 24px;
+            height: 28px;
+            min-width: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Space Mono', monospace;
-            font-size: 1em;
+            font-size: 0.75em;
             font-weight: 700;
-            border-radius: 6px;
+            border-radius: 4px;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .shift-bit.plus {
@@ -1663,6 +2198,188 @@
             height: 24px;
         }
 
+        /* 3D Energy Landscape - Side Panel */
+        .landscape-panel {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .landscape-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .landscape-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-quantum), var(--accent-hybrid));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: white;
+        }
+
+        .landscape-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--accent-quantum);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .landscape-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95) 0%, rgba(18, 18, 26, 0.95) 100%);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 245, 212, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 245, 212, 0.08) inset;
+            animation: glow3d 3s ease-in-out infinite alternate;
+        }
+
+        .landscape-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .landscape-canvas:active {
+            cursor: grabbing;
+        }
+
+        .landscape-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .landscape-info {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .landscape-info-label {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.6em;
+            margin-bottom: 3px;
+        }
+
+        .landscape-info-value {
+            color: var(--accent-quantum);
+            font-weight: 700;
+            font-size: 1.5em;
+            text-shadow: 0 0 15px rgba(0, 245, 212, 0.5);
+        }
+
+        .landscape-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .landscape-btn {
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .landscape-btn:hover {
+            background: var(--accent-quantum);
+            color: var(--bg-dark);
+            border-color: var(--accent-quantum);
+            box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
+        }
+
+        .landscape-legend {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .legend-gradient {
+            width: 80px;
+            height: 10px;
+            background: linear-gradient(90deg, #00f5d4, #f72585);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
+        }
+
+        .legend-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6em;
+            color: var(--text-secondary);
+        }
+
+        .landscape-caption {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding: 0 5px;
+        }
+
+        .landscape-caption span {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .circuit-qubit-label {
+            fill: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .circuits-explorer {
+                grid-template-columns: 1fr;
+            }
+            .hardware-list {
+                max-height: 350px;
+            }
+        }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -1679,6 +2396,16 @@
         .footer-text a {
             color: var(--accent-quantum);
             text-decoration: none;
+        }
+
+        /* Responsive - Landscape Panel */
+        @media (max-width: 1000px) {
+            .landscape-panel {
+                position: static;
+            }
+            .landscape-container {
+                height: 320px;
+            }
         }
 
         /* Responsive */
@@ -1755,9 +2482,6 @@
     <div class="page-container">
         <!-- Hero Section -->
         <header class="header hero-section">
-            <div class="hero-badge">
-                <span>MIT iQuHACK 2026 - NVIDIA Challenge</span>
-            </div>
             <div class="logo">
                 <div class="logo-glow"></div>
                 <div class="logo-main">
@@ -1915,15 +2639,19 @@
             </div>
         </div>
 
-        <div class="section-divider"></div>
-
         <!-- Optimization Race Section -->
-        <div class="section">
+        <div class="section" id="race-section">
             <div class="section-header">
                 <div class="section-icon"><span class="icon-text">01</span></div>
                 <div class="section-title-group">
                     <div class="section-title">Optimization Race</div>
                     <div class="section-subtitle">Watch quantum strings compete in real-time</div>
+                </div>
+                <div class="race-selector">
+                    <button class="race-selector-btn active" data-race="JENGA" onclick="switchRace('JENGA')">🧱 JENGA</button>
+                    <button class="race-selector-btn" data-race="DNA-2" onclick="switchRace('DNA-2')">🧬 DNA-2</button>
+                    <button class="race-selector-btn" data-race="BEYBLADE" onclick="switchRace('BEYBLADE')">🌀 BEYBLADE</button>
+                    <button class="race-selector-btn" data-race="DCQO" onclick="switchRace('DCQO')">⚛️ DCQO</button>
                 </div>
             </div>
 
@@ -1940,18 +2668,26 @@
                     </div>
                 </div>
 
-                <div class="leader-energy-map" id="leaderEnergyMap">
-                    <div class="leader-header">
-                        <div class="leader-crown">1</div>
-                        <span class="leader-title">Leader Energy</span>
+                <!-- 3D Bitstring Race -->
+                <div class="race-3d-panel">
+                    <div class="race-3d-header">
+                        <div class="race-3d-icon">3D</div>
+                        <span class="race-3d-title">Bitstring Race</span>
                     </div>
-                    <div class="leader-energy-value">
-                        <div class="leader-energy-number" id="leaderEnergy">--</div>
-                        <div class="leader-energy-label">Total E = ΣCₖ²</div>
+                    <div class="race-3d-container">
+                        <div class="race-3d-labels">
+                            <div class="race-3d-label-title">Leader Sidelobe Distribution</div>
+                            <div class="race-3d-label-y">Cₖ² Energy</div>
+                            <div class="race-3d-label-x">Shift k</div>
+                            <div class="race-3d-label-bits">Bit Sequence</div>
+                        </div>
+                        <canvas id="race3dCanvas" class="race-3d-canvas"></canvas>
                     </div>
-                    <div class="leader-sequence" id="leaderSequence"></div>
-                    <div class="leader-chart" id="leaderChart"></div>
-                    <div class="leader-chart-label">Sidelobe Energy (C₁² to Cₙ₋₁²)</div>
+                    <div class="race-3d-legend">
+                        <span style="color: #00f5d4">■ 1</span>
+                        <span style="color: #f72585">■ 0</span>
+                        <span style="opacity: 0.6; margin-left: 10px;">Bars = Cₖ² Sidelobes</span>
+                    </div>
                 </div>
             </div>
 
@@ -1985,70 +2721,108 @@
             </div>
         </div>
 
-        <div class="section-divider"></div>
-
-        <!-- Energy Analysis Section -->
-        <div class="section">
+        <!-- Energy Analysis Section with 3D Visualization -->
+        <div class="section" id="energy-section">
             <div class="section-header">
                 <div class="section-icon"><span class="icon-text">E</span></div>
                 <div class="section-title-group">
                     <div class="section-title">Energy Analysis</div>
-                    <div class="section-subtitle">LABS autocorrelation energy breakdown</div>
+                    <div class="section-subtitle">Interactive LABS energy explorer with 3D visualization</div>
                 </div>
             </div>
 
-            <div class="energy-panel" id="energyPanel">
-                <div class="energy-panel-header">
-                    <div class="energy-panel-title">LABS Energy Analysis</div>
-                    <div class="energy-total">
-                        <span class="energy-total-label">Total Energy:</span>
-                        <span class="energy-total-value" id="bestEnergy">--</span>
-                        <span class="energy-target" id="energyTarget">(Target: 3 for N=7)</span>
-                    </div>
-                </div>
-                
-                <div class="n-control">
-                    <span class="n-label">Sequence Length N =</span>
-                    <input type="number" id="nInput" min="3" max="66" value="7" class="n-input">
-                    <input type="range" id="nSlider" min="3" max="66" value="7" class="n-slider">
-                    <button class="btn-random" id="randomizeBtn">Randomize</button>
-                </div>
-                
-                <div class="sequence-input-label">Tap bits to toggle</div>
-                <div class="sequence-display" id="sequenceDisplay"></div>
-                
-                <div class="shift-window-section">
-                    <div class="shift-header">
-                        <span class="shift-title">Shift Window k = <span id="shiftKValue">1</span></span>
-                        <input type="range" id="shiftSlider" min="1" max="6" value="1" class="shift-slider">
-                    </div>
-                    <div class="shift-rows">
-                        <div class="shift-row">
-                            <div class="shift-label">Original s<sub>i+k</sub></div>
-                            <div class="shift-bits" id="originalRow"></div>
+            <div class="energy-explorer">
+                <!-- Top Row: Big Energy + 3D Visualization -->
+                <div class="explorer-top">
+                    <div class="energy-hero">
+                        <div class="energy-hero-display">
+                            <div class="energy-hero-label">Total Energy</div>
+                            <div class="energy-hero-value" id="bestEnergy">--</div>
+                            <div class="energy-hero-target" id="energyTarget">Target: 3 for N=7</div>
                         </div>
-                        <div class="shift-row">
-                            <div class="shift-label">Shifted s<sub>i</sub></div>
-                            <div class="shift-bits" id="shiftedRow"></div>
+                        <div class="energy-hero-formula">
+                            <span class="formula-main">E = ΣCₖ²</span>
+                            <span class="formula-sub">where Cₖ = Σ sᵢ · sᵢ₊ₖ</span>
                         </div>
-                        <div class="shift-row product-row">
-                            <div class="shift-label">Product</div>
-                            <div class="shift-bits" id="productRow"></div>
+                        <div class="known-optima-inline" id="knownOptima"></div>
+                    </div>
+                    
+                    <div class="landscape-3d-main">
+                        <div class="landscape-container">
+                            <canvas id="landscapeCanvas" class="landscape-canvas"></canvas>
+                            <div class="landscape-overlay">
+                                <div class="landscape-info">
+                                    <div class="landscape-info-label">3D Energy</div>
+                                    <div class="landscape-info-value" id="landscape3dEnergy">--</div>
+                                </div>
+                            </div>
+                            <div class="landscape-legend">
+                                <span class="legend-label">Low Cₖ²</span>
+                                <div class="legend-gradient"></div>
+                                <span class="legend-label">High Cₖ²</span>
+                            </div>
+                            <div class="landscape-controls">
+                                <button class="landscape-btn" id="resetCameraBtn">Reset</button>
+                                <button class="landscape-btn" id="autoRotateBtn">Rotate</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="shift-result">
-                        <span>C<sub id="resultK">1</sub> = <span id="ckResult">0</span></span>
-                        <span class="shift-squared">C<sub id="resultK2">1</sub><sup>2</sup> = <span id="ckSquaredResult">0</span></span>
+                </div>
+
+                <!-- Sequence Editor Row -->
+                <div class="explorer-sequence">
+                    <div class="sequence-controls">
+                        <div class="n-control-inline">
+                            <span class="n-label">N =</span>
+                            <input type="number" id="nInput" min="3" max="66" value="7" class="n-input">
+                            <input type="range" id="nSlider" min="3" max="66" value="7" class="n-slider">
+                        </div>
+                        <button class="btn-random" id="randomizeBtn">Randomize</button>
+                    </div>
+                    <div class="sequence-editor">
+                        <div class="sequence-label">Tap bits to toggle:</div>
+                        <div class="sequence-display" id="sequenceDisplay"></div>
                     </div>
                 </div>
-                
-                <div class="sidelobe-chart" id="sidelobeChart"></div>
-                
-                <div class="energy-formula">
-                    <div class="formula-title">Energy Formula</div>
-                    <div class="formula-text">E = Sum of C<sub>k</sub><sup>2</sup> where C<sub>k</sub> = Sum of s<sub>i</sub> * s<sub>i+k</sub></div>
-                    <div class="known-optima" id="knownOptima"></div>
-                </div>
+
+                <!-- Bottom Row: Shift Window + Sidelobe Chart -->
+                <div class="explorer-bottom">
+                    <div class="shift-window-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Shift Window</span>
+                            <div class="shift-k-control">
+                                <span>k = <span id="shiftKValue">1</span></span>
+                                <input type="range" id="shiftSlider" min="1" max="6" value="1" class="shift-slider-inline">
+                            </div>
+                        </div>
+                        <div class="shift-visualization">
+                            <div class="shift-rows">
+                                <div class="shift-row">
+                                    <div class="shift-label">Original sᵢ₊ₖ</div>
+                                    <div class="shift-bits" id="originalRow"></div>
+                                </div>
+                                <div class="shift-row">
+                                    <div class="shift-label">Shifted sᵢ</div>
+                                    <div class="shift-bits" id="shiftedRow"></div>
+                                </div>
+                                <div class="shift-row product-row">
+                                    <div class="shift-label">Product</div>
+                                    <div class="shift-bits" id="productRow"></div>
+                                </div>
+                            </div>
+                            <div class="shift-result">
+                                <span class="result-ck">C<sub id="resultK">1</sub> = <span id="ckResult">0</span></span>
+                                <span class="result-ck-squared">C<sub id="resultK2">1</sub>² = <span id="ckSquaredResult">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sidelobe-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Sidelobe Energy Distribution</span>
+                        </div>
+                        <div class="sidelobe-chart" id="sidelobeChart"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2077,108 +2851,58 @@
     </div>
 
     <script>
-        // Inline CSV data
-        const csvData = `Time,String_1,String_2,String_3,String_4,String_5,String_6
-0,0010111,1101000,0111101,0001011,1000010,1011110
-1,0010111,1101000,0111101,0001011,1000010,1011110
-2,0010111,1101000,0111101,0001011,1000010,1011110
-3,0011111,1101000,0111101,0001011,1000010,1011110
-4,0011111,1101000,0111101,0001011,1000010,1011110
-5,0100111,1101000,0111101,0001011,1000010,1011110
-6,0100111,1101000,0111101,0001011,1000010,1011110
-7,0100111,1101000,0111101,0011011,1000010,1011110
-8,0100111,1101000,0111101,0011011,1000010,1011110
-9,0100111,1101000,0111101,0111011,1000010,1011110
-10,0100111,1101000,0111101,0111011,1000010,1011110
-11,0100111,1101000,0111101,0111011,1000010,1011110
-12,0110111,1101000,0111101,0111011,1000010,1011110
-13,0110111,1101000,0111101,0111011,1000010,1011110
-14,0110111,1101000,0111101,0111011,1000010,1011110
-15,0110111,1101000,0111101,0111011,1000010,1011110
-16,0110111,1101000,0111101,0111011,1000010,1011110
-17,0110111,1101000,0111101,0111011,1000010,1011110
-18,0110111,1101000,0111101,0111011,1000010,1011110
-19,0110111,1101000,0111101,0111011,1100010,1011110
-20,0110111,1101000,0111101,0111011,1100010,1011110
-21,0110111,1101000,0111101,0111011,1100010,1011110
-22,0110111,1101000,0111101,0111011,1100010,1011110
-23,0110111,1101000,0111101,0111011,1100010,1011110
-24,0110111,1101000,0111101,0111011,1100010,1011110
-25,0110111,1101000,0111101,1011011,1100010,1011110
-26,0110111,1101000,0111101,1011011,1100010,1011110
-27,0110111,1101000,0111101,1011011,1100010,1011110
-28,0110111,1101000,0111101,1011011,1100010,1011110
-29,0110111,1101000,0111101,1011011,1100010,1011110
-30,0110111,1101000,0111101,1011011,1100010,1011110
-31,0110111,1101000,0111101,1011011,1100010,1011110
-32,0110111,1101000,0111101,1011011,1100010,1011110
-33,0110111,1101000,0111101,1011011,1100010,1011110
-34,0110111,1101000,1011101,1011011,1100010,1011110
-35,0110111,1101000,1011101,1011011,1100010,1011110
-36,0110111,1101000,1011101,1011011,1100010,1011110
-37,0110111,1101000,1011101,1011011,1100010,1011110
-38,0110111,1101000,1011101,1011011,1100010,1011110
-39,0110111,1101000,1011101,1011011,1100010,1011110
-40,0110111,1101000,1011101,1011011,1100010,1011110
-41,0110111,1101000,1011101,1011011,1100010,1011110
-42,1010111,1101000,1011101,1011011,1100010,1011110
-43,1010111,1101000,1011101,1011011,1100010,1011110
-44,1010111,1101000,1011101,1011011,1100010,1011110
-45,1010111,1101000,1011101,1011011,1100010,1011110
-46,1010111,1101000,1011101,1011011,1100010,1011110
-47,1010111,1101000,1011101,1011011,1100010,1011110
-48,1010111,1101000,1011101,1011011,1100010,1011110
-49,1010111,1101000,1011101,1011011,1100010,1011110
-50,1010111,1101000,1011101,1011011,1100010,1011110
-51,1010111,1101000,1011101,1011011,1100010,1011110
-52,1010111,1101000,1011101,1011011,1100010,1011110
-53,1010111,1101000,1011101,1011011,1100010,1011110
-54,1010111,1101000,1011101,1011011,1100010,1011110
-55,1010111,1101000,1011101,1011011,1100010,1011110
-56,1010111,1101000,1011101,1011011,1100010,1011110
-57,1010111,1101000,1011101,1011011,1100010,1011110
-58,1010111,1101000,1011101,1011011,1100010,1111110
-59,1010111,1101000,1011101,1011011,1100010,1111110
-60,1010111,1101000,1011101,1011011,1100010,1111110
-61,1010111,1101000,1011101,1011011,1100010,1111110
-62,1010111,1101000,1011101,1011011,1100010,1111110
-63,1010111,1101000,1011101,1011011,1100010,1111110
-64,1010111,1101000,1011101,1011011,1100010,1111110
-65,1010111,1101000,1011101,1011011,1100010,1111110
-66,1010111,1101000,1011101,1011011,1100010,1111110
-67,1010111,1101000,1011101,1011011,1100010,1111110
-68,1010111,1101000,1011101,1011011,1100010,1111110
-69,1010111,1101000,1011101,1011011,1100010,1111110
-70,1010111,1101000,1011101,1011011,1100010,1111110
-71,1010111,1101000,1011101,1011011,1100010,1111110
-72,1010111,1101000,1011101,1011011,1100010,1111110
-73,1010111,1101000,1011101,1011011,1100010,1111110
-74,1010111,1101000,1011101,1011011,1100110,1111110
-75,1010111,1101000,1011101,1011011,1100110,1111110
-76,1010111,1101000,1011101,1011011,1100110,1111110
-77,1010111,1101000,1011101,1011011,1100110,1111110
-78,1010111,1101000,1011101,1011011,1100110,1111110
-79,1010111,1101000,1011101,1011011,1100110,1111110
-80,1010111,1101000,1011101,1011011,1100110,1111110
-81,1010111,1101000,1011101,1011011,1100110,1111110
-82,1010111,1101000,1011101,1011011,1100110,1111110
-83,1010111,1101000,1011101,1011011,1100110,1111110
-84,1010111,1101000,1011101,1011011,1100110,1111110
-85,1010111,1101000,1011101,1011011,1100110,1111110
-86,1010111,1101000,1011101,1011011,1100110,1111110
-87,1010111,1101100,1011101,1011011,1100110,1111110
-88,1010111,1101100,1011101,1011011,1100110,1111110
-89,1010111,1101100,1011101,1011011,1100110,1111110
-90,1010111,1101100,1011101,1011011,1100110,1111110
-91,1010111,1101100,1011101,1011011,1100110,1111110
-92,1010111,1101100,1011101,1011011,1100110,1111110
-93,1010111,1101100,1011101,1011011,1100110,1111110
-94,1010111,1101100,1011101,1011011,1100110,1111110
-95,1010111,1101100,1011101,1011011,1100110,1111110
-96,1010111,1101100,1011101,1011011,1100110,1111110
-97,1010111,1101100,1011101,1011011,1100110,1111110
-98,1010111,1101100,1011101,1011011,1100110,1111110
-99,1110111,1111100,1111101,1111011,1110110,1111110`;
+        // Inline CSV data for all 3 races
+        const raceDatasets = {
+            'JENGA': `Time,String_1,String_2,String_3,String_4,String_5,String_6
+0,0000101,1111010,0101111,1010000,1011101,0001000
+1,0000101,1111010,0101111,1010000,1011101,0001000
+2,0000101,1111010,0101111,1010000,1011101,0001010
+3,0000101,1111010,0101111,1010000,1011101,0101010
+4,0000111,1111010,0101111,1010000,1011101,0101010
+5,0100111,1111010,0101111,1010000,1011101,0101010
+6,0100111,1111010,0101111,1010000,1011101,0101010
+7,0100111,1111010,0101111,1010010,1011101,0101010
+8,0100111,1111010,0101111,1010010,1011101,0101010
+9,0100111,1111010,0101111,1010010,1011111,0101010`,
+
+            'DNA-2': `Time,String_1,String_2,String_3,String_4,String_5,String_6
+0,0110101,0011111,1001010,1100000,1111100,0101001
+1,0110101,0011111,1001010,1100000,1111100,0101001
+2,0110101,0011111,1001010,1100000,1111100,0101011
+3,0110101,0011111,1001010,1100000,1111100,0101011
+4,0110101,0011111,1001010,1100000,1111100,0101111
+5,0110101,0011111,1001010,1100000,1111100,0101111
+6,0110101,0011111,1001010,1100000,1111100,0101111
+7,0110101,0011111,1001010,1100010,1111100,0101111
+8,0110101,0011111,1001010,1100010,1111100,0101111
+9,0110101,0011111,1001010,1100010,1111100,0101111`,
+
+            'BEYBLADE': `Time,String_1,String_2,String_3,String_4,String_5,String_6
+0,1000010,0111101,1101000,0010111,1000000,1110001
+1,1000010,0111101,1101000,0010111,1000000,1110001
+2,1000010,0111101,1101000,0010111,1000010,1110001
+3,1000010,0111101,1101000,0010111,1000010,1110001
+4,1000010,0111101,1101000,0010111,1000010,1110001
+5,1000010,0111101,1101000,0010111,1000110,1110001
+6,1000010,0111101,1101000,0010111,1000110,1110001
+7,1000010,0111101,1101000,0010111,1000110,1110001
+8,1000010,0111101,1101000,0010111,1000110,1110001
+9,1000010,0111101,1101000,0010111,1000110,1110001`,
+
+            'DCQO': `Time,String_1,String_2,String_3,String_4,String_5,String_6
+0,1100000,1100010,0000110,0110010,1111010,1010001
+1,0011001,1101011,0110001,1000011,1110000,1010111
+2,1110100,0001011,1000010,1011110,1101100,0010111
+3,0100001,0010111,0111101,1110100,0001011,1011110
+4,1011110,1110100,1101000,0001011,1000010,0100001
+5,0100001,0111101,0001011,1011110,1000010,1101000
+6,0111101,0001011,1000010,1110100,0010111,1011110
+7,1110100,1011110,0100001,0111101,1000010,0010111
+8,0100001,1011110,0001011,0010111,1110100,1000010
+9,1011110,0100001,0010111,1110100,0001011,0111101`
+        };
+
+        let currentRace = 'JENGA';
 
         let data = [];
         let currentTimeIndex = 0;
@@ -2232,14 +2956,14 @@
             
             // Update target display
             const target = knownOptima[currentN] || '?';
-            document.getElementById('energyTarget').textContent = `(Target: ${target} for N=${currentN})`;
+            document.getElementById('energyTarget').textContent = `Target: ${target} for N=${currentN}`;
             
             // Update known optima display
             const optimaDisplay = document.getElementById('knownOptima');
             if (knownOptima[currentN]) {
-                optimaDisplay.textContent = `Best known E = ${knownOptima[currentN]} for N = ${currentN}`;
+                optimaDisplay.innerHTML = `<span style="color: var(--accent-quantum)">N=${currentN}</span> → Best known E = <span style="color: var(--accent-quantum)">${knownOptima[currentN]}</span>`;
             } else {
-                optimaDisplay.textContent = '';
+                optimaDisplay.textContent = `N=${currentN} (optimal unknown)`;
             }
             
             // Reset shift k if needed
@@ -2402,6 +3126,11 @@
             
             // Update total energy
             document.getElementById('bestEnergy').textContent = energy;
+            
+            // Update 3D landscape visualization if initialized
+            if (barsGroup && bitCubesGroup) {
+                updateVisualization(binaryStr);
+            }
         }
 
         // Calculate Hamming distance (number of bit flips needed)
@@ -2518,10 +3247,34 @@
 
         function loadCSV() {
             try {
-                parseCSV(csvData);
+                parseCSV(raceDatasets[currentRace]);
             } catch (error) {
                 document.getElementById('rankings').innerHTML = 
                     '<div class="error">' + error.message + '</div>';
+            }
+        }
+
+        function switchRace(raceName) {
+            if (raceDatasets[raceName]) {
+                currentRace = raceName;
+                // Stop playback
+                if (isPlaying) {
+                    isPlaying = false;
+                    clearInterval(playInterval);
+                    document.getElementById('playPauseBtn').textContent = 'Play';
+                }
+                // Reset state
+                currentTimeIndex = 0;
+                currentElements = {};
+                document.getElementById('rankings').innerHTML = '';
+                // Clear 3D scene
+                if (typeof clearRace3D === 'function') clearRace3D();
+                // Reload data
+                loadCSV();
+                // Update selector buttons
+                document.querySelectorAll('.race-selector-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.race === raceName);
+                });
             }
         }
 
@@ -2728,33 +3481,15 @@
             currentElements = newElements;
             updateProgressBar();
             
-            // Update leader energy map with 1st place
+            // Update 3D race visualization with all strings
             if (timeStep.strings.length > 0) {
-                updateLeaderEnergyMap(timeStep.strings[0].value);
+                updateRace3DAllStrings(timeStep.strings);
             }
         }
 
         function updateLeaderEnergyMap(binaryString) {
-            const { energy, sidelobes } = calculateEnergy(binaryString);
-            
-            // Update energy number
-            document.getElementById('leaderEnergy').textContent = energy;
-            
-            // Update sequence display
-            const sequenceDiv = document.getElementById('leaderSequence');
-            sequenceDiv.innerHTML = binaryString.split('').map(bit => 
-                `<div class="leader-bit ${bit === '1' ? 'one' : 'zero'}">${bit === '1' ? '+1' : '-1'}</div>`
-            ).join('');
-            
-            // Update chart bars
-            const chartDiv = document.getElementById('leaderChart');
-            const maxCk = Math.max(...sidelobes.map(c => c.ckSquared), 1);
-            const barHeight = 100;
-            
-            chartDiv.innerHTML = sidelobes.map((c, i) => {
-                const height = (c.ckSquared / maxCk) * barHeight;
-                return `<div class="leader-bar" style="height: ${Math.max(height, 2)}px" title="C${c.k}² = ${c.ckSquared}"></div>`;
-            }).join('');
+            // This function now only updates the 3D race visualization
+            // The old leader energy panel elements have been removed
         }
 
         function updateProgressBar() {
@@ -2932,8 +3667,627 @@
             }
         }
         
+        // ============================================
+        // 3D Race Sidelobe Distribution (Three.js)
+        // ============================================
+        
+        let raceScene, raceCamera, raceRenderer, raceControls;
+        let raceBarsGroup;
+        let raceAutoRotate = false;
+        let currentRaceSequence = null;
+        
+        function initRace3D() {
+            const canvas = document.getElementById('race3dCanvas');
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            
+            // Scene setup
+            raceScene = new THREE.Scene();
+            raceScene.background = new THREE.Color(0x05050a);
+            
+            // Camera - orthographic-like view to fill the space
+            raceCamera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
+            raceCamera.position.set(0, 2.5, 8);
+            raceCamera.lookAt(0, 2.5, 0);
+            
+            // Renderer
+            raceRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            raceRenderer.setSize(container.clientWidth, container.clientHeight);
+            raceRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            raceRenderer.shadowMap.enabled = true;
+            
+            // Controls
+            raceControls = new THREE.OrbitControls(raceCamera, raceRenderer.domElement);
+            raceControls.enableDamping = true;
+            raceControls.dampingFactor = 0.05;
+            raceControls.minDistance = 4;
+            raceControls.maxDistance = 20;
+            raceControls.autoRotate = false;
+            raceControls.autoRotateSpeed = 0.8;
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.7);
+            raceScene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            mainLight.position.set(5, 12, 8);
+            raceScene.add(mainLight);
+            
+            const quantumLight = new THREE.PointLight(0x00f5d4, 0.5, 20);
+            quantumLight.position.set(-8, 5, 5);
+            raceScene.add(quantumLight);
+            
+            const classicalLight = new THREE.PointLight(0xf72585, 0.4, 20);
+            classicalLight.position.set(8, 5, -5);
+            raceScene.add(classicalLight);
+            raceScene.add(classicalLight);
+            
+            // Grid
+            const gridHelper = new THREE.GridHelper(12, 24, 0x00f5d4, 0x1a1a2e);
+            gridHelper.material.opacity = 0.15;
+            gridHelper.material.transparent = true;
+            raceScene.add(gridHelper);
+            
+            // Bars group
+            raceBarsGroup = new THREE.Group();
+            raceScene.add(raceBarsGroup);
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                if (container && raceCamera && raceRenderer) {
+                    raceCamera.aspect = container.clientWidth / container.clientHeight;
+                    raceCamera.updateProjectionMatrix();
+                    raceRenderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+            
+            // Start animation
+            animateRace3D();
+        }
+        
+        function updateRace3D(binaryString) {
+            // Deprecated
+        }
+        
+        let race3DInitialized = false;
+        let race3DBars = [];
+        let race3DRings = [];
+        let race3DCubes = [];
+
+        // Clear 3D race scene when switching races
+        function clearRace3D() {
+            if (!raceBarsGroup) return;
+            while (raceBarsGroup.children.length > 0) {
+                raceBarsGroup.remove(raceBarsGroup.children[0]);
+            }
+            race3DInitialized = false;
+            race3DBars = [];
+            race3DRings = [];
+            race3DCubes = [];
+        }
+        
+        // Same visualization as energy analysis - show 1st place (no regeneration)
+        function updateRace3DAllStrings(strings) {
+            if (!raceBarsGroup || !strings || strings.length === 0) return;
+            
+            const leader = strings[0];
+            const binaryString = leader.value;
+            const sequence = binaryToSequence(binaryString);
+            const n = sequence.length;
+            const { sidelobes } = calculateEnergy(binaryString);
+            
+            const maxCkSquared = Math.max(...sidelobes.map(s => s.ckSquared), 1);
+            const barWidth = Math.min(0.6, 6 / (n - 1));
+            const spacing = barWidth * 1.3;
+            const totalWidth = (n - 2) * spacing;
+            const startX = -totalWidth / 2;
+            
+            const lowColor = new THREE.Color(0x00f5d4);
+            const highColor = new THREE.Color(0xf72585);
+            
+            // First time: create everything with animation
+            if (!race3DInitialized || race3DBars.length !== sidelobes.length) {
+                // Clear existing
+                while (raceBarsGroup.children.length > 0) {
+                    const child = raceBarsGroup.children[0];
+                    raceBarsGroup.remove(child);
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                }
+                race3DBars = [];
+                race3DRings = [];
+                race3DCubes = [];
+                
+                // Create bars
+                sidelobes.forEach((s, index) => {
+                    const normalizedHeight = s.ckSquared / maxCkSquared;
+                    const height = Math.max(normalizedHeight * 4, 0.1);
+                    const color = new THREE.Color().lerpColors(lowColor, highColor, normalizedHeight);
+                    
+                    const geometry = new THREE.BoxGeometry(barWidth, 1, barWidth);
+                    const material = new THREE.MeshStandardMaterial({
+                        color: color,
+                        metalness: 0.3,
+                        roughness: 0.4,
+                        emissive: color,
+                        emissiveIntensity: normalizedHeight * 0.3
+                    });
+                    
+                    const bar = new THREE.Mesh(geometry, material);
+                    bar.position.x = startX + index * spacing;
+                    bar.position.y = height / 2;
+                    bar.position.z = 0;
+                    bar.scale.y = height;
+                    bar.castShadow = true;
+                    
+                    bar.scale.set(0, 0, 0);
+                    gsap.to(bar.scale, {
+                        x: 1, y: height, z: 1,
+                        duration: 0.6,
+                        delay: index * 0.03,
+                        ease: 'elastic.out(1, 0.5)'
+                    });
+                    
+                    raceBarsGroup.add(bar);
+                    race3DBars.push(bar);
+                    
+                    // Ring
+                    const ringGeometry = new THREE.RingGeometry(barWidth * 0.4, barWidth * 0.6, 16);
+                    const ringMaterial = new THREE.MeshBasicMaterial({
+                        color: color,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.5
+                    });
+                    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                    ring.rotation.x = -Math.PI / 2;
+                    ring.position.x = bar.position.x;
+                    ring.position.y = 0.01;
+                    ring.position.z = 0;
+                    raceBarsGroup.add(ring);
+                    race3DRings.push(ring);
+                });
+                
+                // Create bit cubes
+                const cubeSize = Math.min(0.4, 4 / n);
+                const cubeSpacing = cubeSize * 1.4;
+                const cubeStartX = -(n * cubeSpacing) / 2;
+                
+                sequence.forEach((bit, index) => {
+                    const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                    const isOne = bit === 1;
+                    
+                    const material = new THREE.MeshStandardMaterial({
+                        color: isOne ? 0x00f5d4 : 0xf72585,
+                        metalness: 0.5,
+                        roughness: 0.3,
+                        emissive: isOne ? 0x00f5d4 : 0xf72585,
+                        emissiveIntensity: 0.3
+                    });
+                    
+                    const cube = new THREE.Mesh(geometry, material);
+                    cube.position.x = cubeStartX + index * cubeSpacing + cubeSize / 2;
+                    cube.position.y = -1;
+                    cube.position.z = 0;
+                    cube.userData.bitIndex = index;
+                    
+                    cube.scale.set(0, 0, 0);
+                    gsap.to(cube.scale, {
+                        x: 1, y: 1, z: 1,
+                        duration: 0.4,
+                        delay: 0.3 + index * 0.02,
+                        ease: 'back.out(2)'
+                    });
+                    
+                    raceBarsGroup.add(cube);
+                    race3DCubes.push(cube);
+                });
+                
+                race3DInitialized = true;
+            } else {
+                // Update existing bars smoothly (no regeneration)
+                sidelobes.forEach((s, index) => {
+                    if (index >= race3DBars.length) return;
+                    
+                    const normalizedHeight = s.ckSquared / maxCkSquared;
+                    const height = Math.max(normalizedHeight * 4, 0.1);
+                    const color = new THREE.Color().lerpColors(lowColor, highColor, normalizedHeight);
+                    
+                    const bar = race3DBars[index];
+                    const ring = race3DRings[index];
+                    
+                    // Smooth transition
+                    gsap.to(bar.scale, { y: height, duration: 0.3, ease: 'power2.out' });
+                    gsap.to(bar.position, { y: height / 2, duration: 0.3, ease: 'power2.out' });
+                    bar.material.color.copy(color);
+                    bar.material.emissive.copy(color);
+                    bar.material.emissiveIntensity = normalizedHeight * 0.3;
+                    ring.material.color.copy(color);
+                });
+                
+                // Update bit cubes
+                sequence.forEach((bit, index) => {
+                    if (index >= race3DCubes.length) return;
+                    
+                    const cube = race3DCubes[index];
+                    const isOne = bit === 1;
+                    const color = new THREE.Color(isOne ? 0x00f5d4 : 0xf72585);
+                    
+                    cube.material.color.copy(color);
+                    cube.material.emissive.copy(color);
+                });
+            }
+        }
+        
+        function animateRace3D() {
+            requestAnimationFrame(animateRace3D);
+            
+            if (raceControls) {
+                raceControls.update();
+            }
+            
+            // Subtle floating animation
+            if (raceBarsGroup) {
+                const time = Date.now() * 0.001;
+                raceBarsGroup.children.forEach((child) => {
+                    if (child.userData && child.userData.rank !== undefined) {
+                        child.rotation.x = Math.sin(time * 2 + child.userData.bitIndex * 0.3) * 0.05;
+                        child.rotation.y = Math.sin(time * 1.5 + child.userData.rank) * 0.05;
+                    }
+                });
+            }
+            
+            if (raceRenderer && raceScene && raceCamera) {
+                raceRenderer.render(raceScene, raceCamera);
+            }
+        }
+        
+        // Hook into updateLeaderEnergyMap to also update 3D race
+        const originalUpdateLeaderEnergyMap = updateLeaderEnergyMap;
+        updateLeaderEnergyMap = function(binaryString) {
+            originalUpdateLeaderEnergyMap(binaryString);
+            updateRace3D(binaryString);
+        };
+        
+        // ============================================
+        // 3D Energy Landscape Visualization (Three.js)
+        // ============================================
+        
+        let scene, camera, renderer, controls;
+        let barsGroup;
+        let bitCubesGroup;
+        let autoRotate = false;
+        let currentLandscapeSequence = null;
+        
+        function initLandscape() {
+            const canvas = document.getElementById('landscapeCanvas');
+            const container = canvas.parentElement;
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0f);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(8, 6, 8);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 4;
+            controls.maxDistance = 20;
+            controls.maxPolarAngle = Math.PI / 2 - 0.1;
+            controls.autoRotateSpeed = 1.5;
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+            scene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(10, 15, 10);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            scene.add(mainLight);
+            
+            const quantumLight = new THREE.PointLight(0x00f5d4, 0.8, 15);
+            quantumLight.position.set(-5, 5, -5);
+            scene.add(quantumLight);
+            
+            const classicalLight = new THREE.PointLight(0xf72585, 0.5, 15);
+            classicalLight.position.set(5, 3, 5);
+            scene.add(classicalLight);
+            
+            // Ground plane
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x0a0a0f,
+                metalness: 0.8,
+                roughness: 0.4
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.1;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Grid on ground
+            const gridHelper = new THREE.GridHelper(16, 32, 0x00f5d4, 0x1a1a2e);
+            gridHelper.position.y = 0;
+            gridHelper.material.opacity = 0.3;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+            
+            // Groups for organized objects
+            barsGroup = new THREE.Group();
+            scene.add(barsGroup);
+            
+            bitCubesGroup = new THREE.Group();
+            bitCubesGroup.position.z = 4;
+            bitCubesGroup.position.y = 0.3;
+            scene.add(bitCubesGroup);
+            
+            // Create initial visualization with energy panel sequence
+            if (selectedStringValue) {
+                createVisualization(selectedStringValue);
+            } else {
+                createVisualization('0100111');
+            }
+            
+            // Handle resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Button listeners
+            document.getElementById('resetCameraBtn').addEventListener('click', () => {
+                gsap.to(camera.position, {
+                    x: 8, y: 6, z: 8,
+                    duration: 1,
+                    ease: 'power2.inOut'
+                });
+                controls.reset();
+            });
+            
+            document.getElementById('autoRotateBtn').addEventListener('click', () => {
+                autoRotate = !autoRotate;
+                controls.autoRotate = autoRotate;
+                document.getElementById('autoRotateBtn').textContent = autoRotate ? 'Stop' : 'Rotate';
+            });
+            
+            // Start animation loop
+            animateLandscape();
+        }
+        
+        function createVisualization(binaryString) {
+            currentLandscapeSequence = binaryString;
+            const sequence = binaryToSequence(binaryString);
+            const n = sequence.length;
+            const { energy, sidelobes } = calculateEnergy(binaryString);
+            
+            // Clear existing bars
+            while (barsGroup.children.length > 0) {
+                const child = barsGroup.children[0];
+                barsGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+            
+            // Clear existing bit cubes
+            while (bitCubesGroup.children.length > 0) {
+                const child = bitCubesGroup.children[0];
+                bitCubesGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+            
+            // Calculate max for normalization
+            const maxCkSquared = Math.max(...sidelobes.map(s => s.ckSquared), 1);
+            const barWidth = Math.min(0.6, 6 / n);
+            const spacing = barWidth * 1.3;
+            const totalWidth = (n - 1) * spacing;
+            const startX = -totalWidth / 2;
+            
+            // Create 3D bars for each Ck²
+            sidelobes.forEach((s, index) => {
+                const normalizedHeight = s.ckSquared / maxCkSquared;
+                const height = Math.max(normalizedHeight * 4, 0.1);
+                
+                // Bar geometry
+                const geometry = new THREE.BoxGeometry(barWidth, height, barWidth);
+                
+                // Color gradient: cyan (low Ck²) to magenta (high Ck²)
+                // HSL: cyan=0.5 (180°), magenta=0.833 (300°) - but we go through purple
+                // Use RGB interpolation for better control
+                const lowColor = new THREE.Color(0x00f5d4);  // cyan
+                const highColor = new THREE.Color(0xf72585); // magenta
+                const color = new THREE.Color().lerpColors(lowColor, highColor, normalizedHeight);
+                
+                const material = new THREE.MeshStandardMaterial({
+                    color: color,
+                    metalness: 0.3,
+                    roughness: 0.4,
+                    emissive: color,
+                    emissiveIntensity: normalizedHeight * 0.3
+                });
+                
+                const bar = new THREE.Mesh(geometry, material);
+                bar.position.x = startX + index * spacing;
+                bar.position.y = height / 2;
+                bar.position.z = 0;
+                bar.castShadow = true;
+                bar.receiveShadow = true;
+                
+                // Store data for interaction
+                bar.userData = { k: s.k, ck: s.ck, ckSquared: s.ckSquared };
+                
+                // Animate bar rising
+                bar.scale.y = 0;
+                gsap.to(bar.scale, {
+                    y: 1,
+                    duration: 0.6,
+                    delay: index * 0.03,
+                    ease: 'elastic.out(1, 0.5)'
+                });
+                
+                barsGroup.add(bar);
+                
+                // Add glowing ring at base
+                const ringGeometry = new THREE.RingGeometry(barWidth * 0.4, barWidth * 0.6, 16);
+                const ringMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.x = bar.position.x;
+                ring.position.y = 0.01;
+                ring.position.z = bar.position.z;
+                barsGroup.add(ring);
+            });
+            
+            // Create bit cubes showing the sequence
+            const cubeSize = Math.min(0.4, 4 / n);
+            const cubeSpacing = cubeSize * 1.4;
+            const cubeStartX = -(n * cubeSpacing) / 2;
+            
+            sequence.forEach((bit, index) => {
+                const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                const isOne = bit === 1;
+                
+                const material = new THREE.MeshStandardMaterial({
+                    color: isOne ? 0x00f5d4 : 0x666666,
+                    metalness: 0.5,
+                    roughness: 0.3,
+                    emissive: isOne ? 0x00f5d4 : 0x333333,
+                    emissiveIntensity: isOne ? 0.4 : 0.1
+                });
+                
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = cubeStartX + index * cubeSpacing;
+                cube.position.y = cubeSize / 2;
+                cube.position.z = 0;
+                cube.castShadow = true;
+                
+                // Animate cubes popping in
+                cube.scale.set(0, 0, 0);
+                gsap.to(cube.scale, {
+                    x: 1, y: 1, z: 1,
+                    duration: 0.4,
+                    delay: index * 0.02,
+                    ease: 'back.out(2)'
+                });
+                
+                bitCubesGroup.add(cube);
+            });
+            
+            // Add connecting line between bits
+            const linePoints = sequence.map((_, i) => 
+                new THREE.Vector3(cubeStartX + i * cubeSpacing, cubeSize / 2, 0)
+            );
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
+            const lineMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x00f5d4, 
+                transparent: true, 
+                opacity: 0.3 
+            });
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            line.position.z = 0;
+            bitCubesGroup.add(line);
+            
+            // Update energy display
+            document.getElementById('landscape3dEnergy').textContent = energy;
+            
+            // Add label for total energy as floating text (using sprite)
+            const target = knownOptima[n] || '?';
+            document.getElementById('landscape3dEnergy').innerHTML = `${energy} <span style="font-size: 0.5em; opacity: 0.6">/ ${target}</span>`;
+        }
+        
+        function updateVisualization(binaryString) {
+            if (binaryString !== currentLandscapeSequence) {
+                // Animate out old bars, then create new
+                const children = [...barsGroup.children, ...bitCubesGroup.children];
+                
+                children.forEach((child, i) => {
+                    gsap.to(child.scale, {
+                        x: 0, y: 0, z: 0,
+                        duration: 0.3,
+                        delay: i * 0.01,
+                        ease: 'power2.in'
+                    });
+                });
+                
+                setTimeout(() => {
+                    createVisualization(binaryString);
+                }, 350);
+            }
+        }
+        
+        function onWindowResize() {
+            const container = document.getElementById('landscapeCanvas').parentElement;
+            if (container && camera && renderer) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        }
+        
+        function animateLandscape() {
+            requestAnimationFrame(animateLandscape);
+            
+            if (controls) {
+                controls.update();
+            }
+            
+            // Subtle floating animation for bars
+            if (barsGroup) {
+                const time = Date.now() * 0.001;
+                barsGroup.children.forEach((child, i) => {
+                    if (child.type === 'Mesh' && child.geometry.type === 'BoxGeometry') {
+                        child.position.y = child.geometry.parameters.height / 2 + Math.sin(time * 2 + i * 0.5) * 0.05;
+                    }
+                });
+            }
+            
+            // Subtle rotation for bit cubes
+            if (bitCubesGroup) {
+                bitCubesGroup.children.forEach((child, i) => {
+                    if (child.type === 'Mesh') {
+                        child.rotation.y += 0.005;
+                    }
+                });
+            }
+            
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+        
         createParticles();
         loadCSV();
+        
+        // Initialize energy panel with default N=7 sequence
+        updateN(7);
+        
+        // Initialize 3D visualizations after a short delay
+        setTimeout(() => {
+            initRace3D();
+            initLandscape();
+            
+            // Show initial 3D visualization with sample strings
+            if (data.length > 0 && data[0].strings.length > 0) {
+                updateRace3DAllStrings(data[0].strings);
+            }
+        }, 800);
     </script>
 </body>
 </html>
