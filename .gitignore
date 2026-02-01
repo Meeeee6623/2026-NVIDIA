@@ -1,1 +1,6 @@
+.venv/
+*.nsys-rep
+*.sqlite
+*.ncu-rep
+labs_gpu/.ipynb_checkpoints/
 .DS_Store
