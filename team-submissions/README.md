@@ -1,6 +1,6 @@
 # Ryzz Gate: Quantum-Accelerated Low Autocorrelation Binary Sequence Optimization
 
-**Team Planck Scale** — Martin, Trent, Sanjeev, Benjamin, Joseph *(presented via huzz.vc)*
+**Team Planck Scale** — Martin, Trent, Sanjeev, Benjamin, Joseph 
 
 ---
 
