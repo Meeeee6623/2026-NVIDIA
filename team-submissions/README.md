@@ -105,6 +105,18 @@ Quantum samples are exported to a **binary file (`.bin`)** which is loaded by a 
 
 ## ⚡ GPU Optimizations in `one_shot.cu`
 
+### Representation Shift: Bit-Packed → int8 Spins
+
+| Aspect | Baseline Approach | Our Optimized Approach |
+|--------|-------------------|------------------------|
+| **Storage** | Bit-packed `BIT_WORD` bitset | `int8_t` values directly as {+1, -1} |
+| **Access** | Repeated `get_bit()` calls with branchy match/mismatch logic | Direct `s_seq[i]` access, no unpacking |
+| **Cₖ Updates** | Conditional logic per bit | Simple arithmetic: `C[k] += -2 * s[j] * neighbor_sum` |
+
+This eliminates branch divergence and enables vectorized operations on spin values.
+
+### Key Optimizations
+
 | Optimization | Impact |
 |--------------|--------|
 | **Shared Memory** | Entire sequence + autocorrelations in fast local memory |
