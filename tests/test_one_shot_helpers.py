@@ -10,7 +10,11 @@ except ImportError:
     dummy.kernel = lambda fn=None, **_: fn  # type: ignore[assignment]
     sys.modules["cudaq"] = dummy
 
-from labs_gpu.one_shot import compute_adiabatic_schedule, export_ready_for_cuda, get_interactions
+from labs_gpu.one_shot import (
+    compute_adiabatic_schedule,
+    export_ready_for_cuda,
+    get_interactions,
+)
 
 
 def test_get_interactions_shapes():
@@ -31,7 +35,9 @@ def test_compute_adiabatic_schedule_bounds():
 def test_export_ready_for_cuda_writes_file(tmp_path):
     population = np.array([[1, -1, 1, -1], [-1, -1, 1, 1]], dtype=np.int8)
     output = tmp_path / "warm_start.bin"
-    export_ready_for_cuda(population, n=4, filename=str(output), gpu_pop_size=4, gpu_max_n=8)
+    export_ready_for_cuda(
+        population, n=4, filename=str(output), gpu_pop_size=4, gpu_max_n=8
+    )
     data = np.fromfile(output, dtype=np.int8)
     assert data.size == 4 * 8
     loaded = data.reshape(4, 8)

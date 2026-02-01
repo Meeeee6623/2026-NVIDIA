@@ -13,7 +13,12 @@ def _skip_if_no_cuda():
     if shutil.which("nvcc") is None:
         pytest.skip("nvcc not available")
     try:
-        subprocess.run(["nvidia-smi"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(
+            ["nvidia-smi"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
     except Exception:
         pytest.skip("CUDA GPU not available")
 
@@ -44,5 +49,7 @@ def test_cuda_kernels_smoke(tmp_path):
     run_cmd = [str(binary), str(n), str(pop_size), str(warm_start), "1000"]
     env = dict(os.environ)
     env["CUDA_VISIBLE_DEVICES"] = env.get("CUDA_VISIBLE_DEVICES", "0")
-    result = subprocess.run(run_cmd, check=True, capture_output=True, text=True, env=env)
+    result = subprocess.run(
+        run_cmd, check=True, capture_output=True, text=True, env=env
+    )
     assert "PASS" in result.stdout or "FAIL" in result.stdout

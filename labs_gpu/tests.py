@@ -110,8 +110,9 @@ class TestHelperFunctions(unittest.TestCase):
         """Schedule should be monotonically increasing (sin^2 trend)."""
         lambdas = one_shot.compute_adiabatic_schedule(20)
         for i in range(len(lambdas) - 1):
-            self.assertLessEqual(lambdas[i], lambdas[i + 1],
-                                 "Schedule should be non-decreasing")
+            self.assertLessEqual(
+                lambdas[i], lambdas[i + 1], "Schedule should be non-decreasing"
+            )
 
     def test_compute_adiabatic_schedule_endpoint(self):
         """Final lambda should approach 1.0."""
@@ -132,6 +133,7 @@ class TestDataExport(unittest.TestCase):
     def tearDown(self):
         """Clean up temporary files."""
         import shutil
+
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_export_creates_file(self):
@@ -152,7 +154,9 @@ class TestDataExport(unittest.TestCase):
         pop = np.random.choice([-1, 1], size=(pop_size, n)).astype(np.int8)
         filepath = os.path.join(self.test_dir, "sized.bin")
 
-        one_shot.export_ready_for_cuda(pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n)
+        one_shot.export_ready_for_cuda(
+            pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n
+        )
 
         expected_size = pop_size * gpu_max_n * 1  # int8 = 1 byte
         self.assertEqual(os.path.getsize(filepath), expected_size)
@@ -162,19 +166,24 @@ class TestDataExport(unittest.TestCase):
         n = 4
         pop_size = 8
         gpu_max_n = 8
-        pop = np.array([
-            [1, -1, 1, -1],
-            [-1, 1, -1, 1],
-            [1, 1, -1, -1],
-            [-1, -1, 1, 1],
-            [1, 1, 1, 1],
-            [-1, -1, -1, -1],
-            [1, -1, -1, 1],
-            [-1, 1, 1, -1],
-        ], dtype=np.int8)
+        pop = np.array(
+            [
+                [1, -1, 1, -1],
+                [-1, 1, -1, 1],
+                [1, 1, -1, -1],
+                [-1, -1, 1, 1],
+                [1, 1, 1, 1],
+                [-1, -1, -1, -1],
+                [1, -1, -1, 1],
+                [-1, 1, 1, -1],
+            ],
+            dtype=np.int8,
+        )
         filepath = os.path.join(self.test_dir, "integrity.bin")
 
-        one_shot.export_ready_for_cuda(pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n)
+        one_shot.export_ready_for_cuda(
+            pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n
+        )
 
         # Read back and verify
         data = np.fromfile(filepath, dtype=np.int8).reshape(pop_size, gpu_max_n)
@@ -188,7 +197,9 @@ class TestDataExport(unittest.TestCase):
         pop = np.array([[1, -1, 1, -1], [-1, 1, -1, 1]], dtype=np.int8)
         filepath = os.path.join(self.test_dir, "padded.bin")
 
-        one_shot.export_ready_for_cuda(pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n)
+        one_shot.export_ready_for_cuda(
+            pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=gpu_max_n
+        )
 
         data = np.fromfile(filepath, dtype=np.int8).reshape(pop_size, gpu_max_n)
         # First n columns should be our data
@@ -202,7 +213,7 @@ class TestDataExport(unittest.TestCase):
 # =============================================================================
 class TestQuantumKernels(unittest.TestCase):
     """Tests for the three quantum kernel variants: jenga, dna, beyblade.
-    
+
     These tests run REAL quantum simulations via cudaq.
     """
 
@@ -212,13 +223,15 @@ class TestQuantumKernels(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_jenga_kernel_produces_output(self):
         """Verify jenga kernel produces valid bitstrings."""
         output = os.path.join(self.test_dir, "jenga.bin")
-        one_shot.run_simulation(n=4, shots=100, pop_size=4, output_file=output,
-                                variant='jenga', steps=1)
+        one_shot.run_simulation(
+            n=4, shots=100, pop_size=4, output_file=output, variant="jenga", steps=1
+        )
         self.assertTrue(os.path.exists(output))
         # Verify file has correct size
         expected_size = 4 * 512  # pop_size * MAX_N (default)
@@ -227,22 +240,25 @@ class TestQuantumKernels(unittest.TestCase):
     def test_dna_kernel_produces_output(self):
         """Verify dna kernel produces valid bitstrings."""
         output = os.path.join(self.test_dir, "dna.bin")
-        one_shot.run_simulation(n=4, shots=100, pop_size=4, output_file=output,
-                                variant='dna', steps=1)
+        one_shot.run_simulation(
+            n=4, shots=100, pop_size=4, output_file=output, variant="dna", steps=1
+        )
         self.assertTrue(os.path.exists(output))
 
     def test_beyblade_kernel_produces_output(self):
         """Verify beyblade kernel produces valid bitstrings."""
         output = os.path.join(self.test_dir, "beyblade.bin")
-        one_shot.run_simulation(n=4, shots=100, pop_size=4, output_file=output,
-                                variant='beyblade', steps=1)
+        one_shot.run_simulation(
+            n=4, shots=100, pop_size=4, output_file=output, variant="beyblade", steps=1
+        )
         self.assertTrue(os.path.exists(output))
 
     def test_run_simulation_with_multiple_steps(self):
         """Verify simulation runs correctly with multiple Trotter steps."""
         output = os.path.join(self.test_dir, "multi_step.bin")
-        one_shot.run_simulation(n=4, shots=100, pop_size=4, output_file=output,
-                                variant='dna', steps=5)
+        one_shot.run_simulation(
+            n=4, shots=100, pop_size=4, output_file=output, variant="dna", steps=5
+        )
         self.assertTrue(os.path.exists(output))
 
     def test_output_contains_valid_spins(self):
@@ -250,27 +266,36 @@ class TestQuantumKernels(unittest.TestCase):
         output = os.path.join(self.test_dir, "spins.bin")
         n = 4
         pop_size = 8
-        one_shot.run_simulation(n=n, shots=100, pop_size=pop_size, output_file=output,
-                                variant='jenga', steps=1)
-        
+        one_shot.run_simulation(
+            n=n,
+            shots=100,
+            pop_size=pop_size,
+            output_file=output,
+            variant="jenga",
+            steps=1,
+        )
+
         data = np.fromfile(output, dtype=np.int8).reshape(pop_size, 512)
         # First n columns should be ±1
         valid_spins = data[:, :n]
-        self.assertTrue(np.all(np.isin(valid_spins, [-1, 1])),
-                        "All spin values should be ±1")
+        self.assertTrue(
+            np.all(np.isin(valid_spins, [-1, 1])), "All spin values should be ±1"
+        )
 
     def test_jenga_n6_larger_system(self):
         """Test jenga on a slightly larger system (N=6)."""
         output = os.path.join(self.test_dir, "n6.bin")
-        one_shot.run_simulation(n=6, shots=200, pop_size=10, output_file=output,
-                                variant='jenga', steps=2)
+        one_shot.run_simulation(
+            n=6, shots=200, pop_size=10, output_file=output, variant="jenga", steps=2
+        )
         self.assertTrue(os.path.exists(output))
 
     def test_beyblade_multiple_trotter_steps(self):
         """Test beyblade with multiple Trotter steps."""
         output = os.path.join(self.test_dir, "beyblade_steps.bin")
-        one_shot.run_simulation(n=4, shots=100, pop_size=4, output_file=output,
-                                variant='beyblade', steps=3)
+        one_shot.run_simulation(
+            n=4, shots=100, pop_size=4, output_file=output, variant="beyblade", steps=3
+        )
         self.assertTrue(os.path.exists(output))
 
 
@@ -294,8 +319,7 @@ class TestCUDAIntegration(unittest.TestCase):
 
         try:
             result = subprocess.run(
-                ["nvcc", "--version"],
-                capture_output=True, text=True
+                ["nvcc", "--version"], capture_output=True, text=True
             )
             nvcc_available = result.returncode == 0
         except FileNotFoundError:
@@ -308,10 +332,12 @@ class TestCUDAIntegration(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix=".o", delete=True) as tmp:
             result = subprocess.run(
                 ["nvcc", "-c", cuda_path, "-o", tmp.name],
-                capture_output=True, text=True
+                capture_output=True,
+                text=True,
             )
-            self.assertEqual(result.returncode, 0,
-                             f"CUDA compilation failed: {result.stderr}")
+            self.assertEqual(
+                result.returncode, 0, f"CUDA compilation failed: {result.stderr}"
+            )
 
     def test_warm_start_binary_format(self):
         """
@@ -329,7 +355,9 @@ class TestCUDAIntegration(unittest.TestCase):
             filepath = f.name
 
         try:
-            one_shot.export_ready_for_cuda(pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=max_n)
+            one_shot.export_ready_for_cuda(
+                pop, n, filepath, gpu_pop_size=pop_size, gpu_max_n=max_n
+            )
 
             # Simulate CUDA loading: read as (pop_size, max_n) int8 buffer
             cuda_buffer = np.fromfile(filepath, dtype=np.int8).reshape(pop_size, max_n)
@@ -384,7 +412,7 @@ class TestEdgeCases(unittest.TestCase):
 # =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Custom test runner with verbose output for grading clarity
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
