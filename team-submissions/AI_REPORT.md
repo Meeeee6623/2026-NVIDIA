@@ -310,7 +310,7 @@ Include: timing benchmarks and memory usage assertions
 ## Testing Philosophy (Martin & Sanjeev)
 - Property-based testing with Hypothesis
 - Known ground truths from literature (N≤66 optimal solutions)
-- CI/CD: pytest on QBraid CPU before GPU deploy
+- CI/CD: pytest on QBraid CPU before GPU deploy, github actions to auto lint code with Ruff
 
 ## Documentation Style (Joseph)
 - Target audience: Technical but not quantum experts

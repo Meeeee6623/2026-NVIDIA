@@ -1,8 +1,6 @@
 import argparse
 import numpy as np
 import cudaq
-import sys
-import os
 
 # -----------------------------------------------------------------------------
 # 1. Physics & Scheduling Helpers

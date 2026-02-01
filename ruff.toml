@@ -1,1 +1,11 @@
+# Ruff configuration for LABS GPU project
 extend-exclude = ["*.ipynb"]
+
+[lint]
+# Ignore undefined name errors in cudaq kernel files (DSL with injected gates)
+# Ignore multiple statements on one line (common in cudaq compact gate sequences)
+ignore = ["F821", "E701", "E702", "E741"]
+
+[lint.per-file-ignores]
+# labs_utils has expected import ordering
+"**/labs_utils.py" = ["E402"]
