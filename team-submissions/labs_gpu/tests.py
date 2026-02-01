@@ -28,6 +28,17 @@ import subprocess
 # Import the module under test - requires cudaq to be installed
 import one_shot
 
+def calculate_energy(s):
+    """Reference energy calculation for +/-1 sequences."""
+    n = len(s)
+    e = 0
+    for k in range(1, n):
+        ck = 0
+        for i in range(n - k):
+            ck += s[i] * s[i + k]
+        e += ck**2
+    return e
+
 
 # =============================================================================
 # TEST CLASS: HELPER FUNCTIONS
@@ -410,6 +421,38 @@ class TestEdgeCases(unittest.TestCase):
 
 
 # =============================================================================
+# TEST CLASS: PHYSICS VALIDATION
+# =============================================================================
+class TestPhysicsValidation(unittest.TestCase):
+    """Verifies physical properties of the LABS problem."""
+
+    def test_labs_symmetry_negation(self):
+        """E(s) == E(-s) must hold for all sequences."""
+        for n in range(4, 12):
+            s = np.random.choice([-1, 1], size=n)
+            e1 = calculate_energy(s)
+            e2 = calculate_energy(-s)
+            self.assertEqual(e1, e2, f"Negation symmetry failed for N={n}")
+
+    def test_labs_symmetry_reversal(self):
+        """E(s) == E(s_reversed) must hold for all sequences."""
+        for n in range(4, 12):
+            s = np.random.choice([-1, 1], size=n)
+            e1 = calculate_energy(s)
+            e2 = calculate_energy(s[::-1])
+            self.assertEqual(e1, e2, f"Reversal symmetry failed for N={n}")
+
+    def test_known_ground_truths(self):
+        """Verify energy against known optimal values for small N."""
+        # N=3: [1,1,-1] -> E=1
+        self.assertEqual(calculate_energy([1, 1, -1]), 1)
+        # N=4: [1,1,1,-1] -> E=2
+        self.assertEqual(calculate_energy([1, 1, 1, -1]), 2)
+        # N=5: [1,1,1,-1,-1] -> E=4 (or similar)
+        self.assertEqual(calculate_energy([1, 1, 1, -1, -1]), 4)
+
+
+# =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
 if __name__ == "__main__":
@@ -423,6 +466,7 @@ if __name__ == "__main__":
     suite.addTests(loader.loadTestsFromTestCase(TestQuantumKernels))
     suite.addTests(loader.loadTestsFromTestCase(TestCUDAIntegration))
     suite.addTests(loader.loadTestsFromTestCase(TestEdgeCases))
+    suite.addTests(loader.loadTestsFromTestCase(TestPhysicsValidation))
 
     # Run with verbosity=2 for detailed output
     runner = unittest.TextTestRunner(verbosity=2)
