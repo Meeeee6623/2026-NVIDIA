@@ -19,7 +19,6 @@ Author: Generated for NVIDIA 2026 Hackathon
 import unittest
 import numpy as np
 import os
-import sys
 import tempfile
 import subprocess
 

@@ -1,4 +1,3 @@
-import numpy as np
 
 def compute_topology_overlaps(G2, G4):
     """
@@ -23,7 +22,7 @@ def compute_topology_overlaps(G2, G4):
     
     return {'22': I_22, '44': I_44, '24': I_24}
 
-from math import sin, cos, pi
+from math import sin, pi
 
 def compute_theta(t, dt, total_time, N, G2, G4):
     """
