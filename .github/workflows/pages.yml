@@ -24,12 +24,20 @@ jobs:
       - name: Copy HTML file
         run: |
           mkdir -p _site
-          cp team-submissions/ryzzhoot.html _site/index.html
+          cp website/index.html _site/index.html
+      
+      - name: Create Cloudflare Pages Project
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create planck-scale-iquhack26 --production-branch=main
       
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy _site --project-name=planck-scale-iquhack26 --branch=${{ github.ref_name }}
+          command: pages deploy _site --project-name=planck-scale-iquhack26 --branch=${{ github.ref_name }} --commit-dirty=true
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
