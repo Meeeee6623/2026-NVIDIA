@@ -27,10 +27,9 @@ jobs:
           cp team-submissions/ryzzhoot.html _site/index.html
       
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: Planck-Scale-iQuHACK26
-          directory: _site
+          command: pages deploy _site --project-name=planck-scale-iquhack26 --branch=${{ github.ref_name }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
